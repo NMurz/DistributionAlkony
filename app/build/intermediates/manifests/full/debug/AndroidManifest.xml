@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="kg.ut.distributionalkony"
+    android:versionCode="1"
+    android:versionName="1.73" >
+
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="19" />
+
+    <!-- <uses-sdk -->
+    <!-- android:minSdkVersion="8" -->
+    <!-- android:targetSdkVersion="19" /> -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" /> -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!--
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    -->
+    <application
+        android:name="kg.ut.distributionalkony.Helpers.Application"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name="kg.ut.distributionalkony.MainActivity"
+            android:label="@string/LogInText"
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name="kg.ut.distributionalkony.DaysOfWeekActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name="kg.ut.distributionalkony.GpsLocationService"
+            android:process=":gpslocation_service" />
+
+        <activity
+            android:name="kg.ut.distributionalkony.OutletsActivity"
+            android:label="@string/title_activity_outlets"
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name="kg.ut.distributionalkony.OpenOutletActivity"
+            android:label="@string/title_activity_open_outlet"
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name="kg.ut.distributionalkony.OutletAddActivity"
+            android:label="@string/title_activity_outlet_add"
+            android:screenOrientation="portrait" >
+        </activity>
+    </application>
+
+</manifest>

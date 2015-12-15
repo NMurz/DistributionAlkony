@@ -1,0 +1,73 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:background="@color/Layout_Background"
+    tools:context="kg.ut.distributionalkony.MainActivity" >
+
+<ScrollView
+        android:id="@+id/scrollView1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" 
+            android:background="@color/Layout_Background">
+		    
+			<ImageView
+		        android:id="@+id/Logo"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_alignParentTop="true"
+		        android:layout_centerHorizontal="true"
+		        android:layout_marginTop="33dp"
+		        android:minHeight="120dp"
+		        android:minWidth="120dp"
+		        android:src="@drawable/lock" />            
+            		
+		    <EditText
+                android:id="@+id/userName"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_below="@+id/Logo"
+		        android:layout_centerHorizontal="true"
+		        android:layout_marginTop="15dp"
+		        android:ems="10" 
+		        android:hint="@string/userNameHint"
+		        />
+		
+		    <EditText
+            	android:id="@+id/password"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_below="@+id/userName"
+		        android:layout_centerHorizontal="true"
+		        android:ems="10"
+		        android:inputType="textPassword" 
+		        android:hint="@string/passwordHint"
+		        />
+
+		    <Button
+		        android:id="@+id/LogIn"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_below="@+id/password"
+		        android:layout_centerHorizontal="true"
+		        android:layout_marginTop="10dp"
+		        android:minWidth="90dp"
+		        android:text="@string/LogInText"
+            	/>
+
+			
+        </RelativeLayout>
+	        
+	  </ScrollView>
+
+</RelativeLayout>
+<!-- From: file:/C:/Users/Nurs/AndroidStudioProjects/DistributionAlkony/app/src/main/res/layout/activity_main.xml -->

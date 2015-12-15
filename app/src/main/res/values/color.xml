@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<color name="Title_Bar_BackGround_Color">#f1f1f1</color>
+	<color name="Layout_Background">#ffffff</color>
+	<color name="MenuBackgroundColor">#F3E2A9</color>
+	<color name="Menu_Color">#08088A</color>		
+</resources>
