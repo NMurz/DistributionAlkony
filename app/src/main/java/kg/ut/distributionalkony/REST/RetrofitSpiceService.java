@@ -7,7 +7,7 @@ import com.octo.android.robospice.retrofit.RetrofitGsonSpiceService;
  */
 public class RetrofitSpiceService extends RetrofitGsonSpiceService{
 
-    public static final String BASE_URL = "http://10.0.3.2:4455/api";
+    public static final String BASE_URL = "http://nrskdm-001-site1.btempurl.com/distribution.api/api";
 
     @Override
     public void onCreate() {

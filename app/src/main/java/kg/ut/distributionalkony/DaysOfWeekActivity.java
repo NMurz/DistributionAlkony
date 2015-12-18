@@ -1,5 +1,6 @@
 package kg.ut.distributionalkony;
 
+import java.net.ConnectException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,6 +31,9 @@ import kg.ut.distributionalkony.Models.OrderCoordinate;
 import kg.ut.distributionalkony.Models.UpdateRouteListDetail;
 import kg.ut.distributionalkony.Models.UserData;
 import kg.ut.distributionalkony.REST.Adapter;
+import kg.ut.distributionalkony.REST.Requests.GetOfflineDataRequest;
+import kg.ut.distributionalkony.REST.Requests.SaveDataRequest;
+import kg.ut.distributionalkony.REST.RetrofitSpiceService;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
@@ -59,6 +63,15 @@ import android.widget.Toast;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
+import com.octo.android.robospice.SpiceManager;
+import com.octo.android.robospice.exception.NetworkException;
+import com.octo.android.robospice.exception.NoNetworkException;
+import com.octo.android.robospice.persistence.DurationInMillis;
+import com.octo.android.robospice.persistence.exception.SpiceException;
+import com.octo.android.robospice.request.listener.RequestListener;
+import com.octo.android.robospice.request.listener.RequestProgress;
+import com.octo.android.robospice.request.listener.RequestProgressListener;
+import com.squareup.okhttp.OkHttpClient;
 
 public class DaysOfWeekActivity extends ActionBarActivity{
 	LatLngReceiver latLngReceiver;
@@ -75,6 +88,8 @@ public class DaysOfWeekActivity extends ActionBarActivity{
 	Dao<DayOfWeek, Integer> dayOfWeekDao;
 	Dao<OutletVisit, Integer> outletVisitDao;
 	Dao<RouteListIdsToSend, Integer> routeListIdsToSendDao;
+	Dao<OrderCoordinate, Integer> orderCoordinateDao;
+	List<OrderCoordinate> orderCoordinates;
 	List<DayOfWeek> daysOfWeek;
 	List<RouteListIdsToSend> routeListIdsToSendList;
 	ProgressDialog mProgressDialog;
@@ -85,7 +100,9 @@ public class DaysOfWeekActivity extends ActionBarActivity{
 	Intent serviceIntent;
 	GPSTracker gps;
 	String credentials;
-
+	private SpiceManager spiceManager = new SpiceManager(RetrofitSpiceService.class);
+	private GetOfflineDataRequest getOfflineDataRequest;
+	private SaveDataRequest saveDataRequest;
 
 	public final static String DAYOFWEEKID = "DAYOFWEEKID";
 	
@@ -100,7 +117,8 @@ public class DaysOfWeekActivity extends ActionBarActivity{
         httpClient = PublicData.getInstance().getHttpClient();
         user = PublicData.getInstance().getUserData();
 		isOffline = prefs.getBoolean("offlineMode", false);
-
+		getOfflineDataRequest = new GetOfflineDataRequest("Basic " + credentials);
+		mProgressDialog = new ProgressDialog(this);
 
 
         //serviceIntent = new Intent(this, GpsLocationService.class);
@@ -118,19 +136,23 @@ public class DaysOfWeekActivity extends ActionBarActivity{
 			routeListElementDao = HelperFactory.getHelper().getRouteListElementDao();
 			priceListElementDao = HelperFactory.getHelper().getPriceListElementDao();
 			storageDao = HelperFactory.getHelper().getStorageDao();
+			orderCoordinateDao = HelperFactory.getHelper().getOrderCoordinateDao();
 			storageItemDao = HelperFactory.getHelper().getStorageItemDao();
 			discountDao = HelperFactory.getHelper().getDiscountDao();
 			outletDao = HelperFactory.getHelper().getOutletDao();
 			outletVisitDao = HelperFactory.getHelper().getOutletVisitDao();
 			routeListIdsToSendDao = HelperFactory.getHelper().getRouteListIdsToSendDao();
+			routeListIdsToSendList = routeListIdsToSendDao.queryForAll();
 			if(isAuthenticated) {
 				if(isOffline) {
 					List<DayOfWeek> dayOfWeeks = dayOfWeekDao.queryForAll();
 					ShowDayOfWeeks(dayOfWeeks);
 				} else  {
 					if (isOnline()) {
-						List<RouteListIdsToSend> routeListsToSend = routeListIdsToSendDao.queryForAll();
-						if (!routeListsToSend.isEmpty()) {
+						if(routeListIdsToSendList.isEmpty()){
+							routeListIdsToSendList = routeListIdsToSendDao.queryForAll();
+						}
+						if (!routeListIdsToSendList.isEmpty()) {
 							AlertDialog.Builder builder = new AlertDialog.Builder(DaysOfWeekActivity.this);
 							builder.setMessage("В базе данных есть неотправленные данные!");
 							builder.setTitle("Подключение");
@@ -145,7 +167,15 @@ public class DaysOfWeekActivity extends ActionBarActivity{
 							List<DayOfWeek> dayOfWeeks = dayOfWeekDao.queryForAll();
 							ShowDayOfWeeks(dayOfWeeks);
 						} else {
-							getOfflineData();
+
+							mProgressDialog.setIndeterminate(true);
+							mProgressDialog.setMessage("Загрузка данных.");
+							mProgressDialog.setCancelable(false);
+							mProgressDialog.setCanceledOnTouchOutside(false);
+							mProgressDialog.show();
+
+							spiceManager.execute(getOfflineDataRequest, "offlineDataRequest", DurationInMillis.ONE_MINUTE, new OfflineDataRequestListener());
+							//getOfflineData();
 						}
 
 					} else {
@@ -196,7 +226,7 @@ public class DaysOfWeekActivity extends ActionBarActivity{
 	}
 
 
-	public void getOfflineData(){
+	/*public void getOfflineData(){
 
 		mProgressDialog = new ProgressDialog(this);
 		mProgressDialog.setIndeterminate(true);
@@ -326,7 +356,7 @@ public class DaysOfWeekActivity extends ActionBarActivity{
 				}
 			}
 		});
-	}
+	}*/
 
 	private void ShowDayOfWeeks(List<DayOfWeek> dayOfWeeks){
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd ");
@@ -440,14 +470,15 @@ public class DaysOfWeekActivity extends ActionBarActivity{
 		if(id == R.id.send_data) {
 			final AlertDialog.Builder builder = new AlertDialog.Builder(DaysOfWeekActivity.this);
 			builder.setTitle("Данные");
-			List<RouteListIdsToSend> routeIds = new ArrayList<RouteListIdsToSend>();
-			try {
-				routeIds = routeListIdsToSendDao.queryForAll();
-			} catch (SQLException e) {
-				e.printStackTrace();
+			if(routeListIdsToSendList.isEmpty()) {
+				try {
+					routeListIdsToSendList = routeListIdsToSendDao.queryForAll();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 			}
-			if(!routeIds.isEmpty()) {
-				builder.setMessage("Неотправленных заказов: " + routeIds.size());
+			if(!routeListIdsToSendList.isEmpty()) {
+				builder.setMessage("Неотправленных заказов: " + routeListIdsToSendList.size());
 				builder.setPositiveButton("Отправить", new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialogInterface, int i) {
@@ -548,6 +579,18 @@ public class DaysOfWeekActivity extends ActionBarActivity{
 		finish();
 	}
 
+	@Override
+	protected void onStart(){
+		spiceManager.start(this);
+		super.onStart();
+	}
+
+	@Override
+	protected void onStop(){
+		spiceManager.shouldStop();
+		super.onStop();
+	}
+
 	private class LatLngReceiver extends BroadcastReceiver{
     	 
     	 @Override
@@ -564,44 +607,169 @@ public class DaysOfWeekActivity extends ActionBarActivity{
     	 
 	}
 
+	public final class OfflineDataRequestListener implements RequestListener<OfflineDataResponse>{
+
+		@Override
+		public void onRequestFailure(SpiceException spiceException) {
+
+			if (mProgressDialog.isShowing()) mProgressDialog.dismiss();
+			AlertDialog.Builder dialog = new AlertDialog.Builder(DaysOfWeekActivity.this);
+			dialog.setTitle("Подключение");
+			dialog.setMessage("Отсутствует подключение к сети! Повторить запрос для получения данных?");
+			dialog.setCancelable(false);
+			dialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialogInterface, int i) {
+					spiceManager.execute(getOfflineDataRequest, "offlineDataRequest", DurationInMillis.ONE_MINUTE, new OfflineDataRequestListener());
+				}
+			});
+			dialog.setNegativeButton("Выход", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialogInterface, int i) {
+					Intent intent = new Intent(Intent.ACTION_MAIN);
+					intent.addCategory(Intent.CATEGORY_HOME);
+					intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+					System.exit(0);
+				}
+			});
+			dialog.create().show();
+
+		}
+
+		@Override
+		public void onRequestSuccess(OfflineDataResponse offlineDataResponse) {
+
+			try {
+
+				HelperFactory.getHelper().clearTables();
+				mProgressDialog.setMessage("Добавление данных в базу");
+
+				if (!offlineDataResponse.RouteLists.isEmpty()) {
+					List<RouteListDto> routeLists = offlineDataResponse.RouteLists;
+					for (RouteListDto routeList : routeLists)
+						routeListDao.create(routeList);
+				}
+				if (!offlineDataResponse.RouteListElements.isEmpty()) {
+					List<RouteListElementDto> routeListElements = offlineDataResponse.RouteListElements;
+					for (RouteListElementDto routeListElementDto : routeListElements)
+						routeListElementDao.create(routeListElementDto);
+				}
+				if (!offlineDataResponse.PriceListElements.isEmpty()) {
+					List<PriceListElementDto> priceListElements = offlineDataResponse.PriceListElements;
+					for (PriceListElementDto priceListElement : priceListElements)
+						priceListElementDao.create(priceListElement);
+				}
+				if (!offlineDataResponse.Storages.isEmpty()) {
+					List<StorageDto> storages = offlineDataResponse.Storages;
+					for (StorageDto storage : storages) storageDao.create(storage);
+				}
+				if (!offlineDataResponse.StorageItems.isEmpty()) {
+					List<StorageItemDto> storageItems = offlineDataResponse.StorageItems;
+					for (StorageItemDto storageItem : storageItems)
+						storageItemDao.create(storageItem);
+				}
+				if (!offlineDataResponse.Discounts.isEmpty()) {
+					List<DiscountDto> discounts = offlineDataResponse.Discounts;
+					for (DiscountDto discount : discounts) discountDao.create(discount);
+				}
+				if (!offlineDataResponse.Outlets.isEmpty()) {
+					List<OutletDto> outlets = offlineDataResponse.Outlets;
+					for (OutletDto outlet : outlets) outletDao.create(outlet);
+				}
+				daysOfWeek = new ArrayList<DayOfWeek>();
+				if (!offlineDataResponse.DaysOfWeek.isEmpty()) {
+					daysOfWeek.addAll(offlineDataResponse.DaysOfWeek);
+					for (DayOfWeek dayOfWeek : daysOfWeek) dayOfWeekDao.create(dayOfWeek);
+				}
+				if (!offlineDataResponse.OutletVisits.isEmpty()) {
+					List<OutletVisit> outletVisits = offlineDataResponse.OutletVisits;
+					for (OutletVisit outletVisit : outletVisits)
+						outletVisitDao.create(outletVisit);
+				}
+
+				if (mProgressDialog.isShowing()) mProgressDialog.dismiss();
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			if (!daysOfWeek.isEmpty()) {
+				ShowDayOfWeeks(daysOfWeek);
+			} else {
+				AlertDialog.Builder dialog = new AlertDialog.Builder(DaysOfWeekActivity.this);
+				dialog.setTitle("Дни посещения")
+						.setMessage("Дни посещения не закреплены за агентом")
+						.setCancelable(false)
+						.setPositiveButton("Выход", new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialogInterface, int i) {
+								prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+								SharedPreferences.Editor ed = prefs.edit();
+								ed.putBoolean("isAuthenticated", false);
+								ed.putString("Credentials", "");
+								ed.commit();
+								Intent intent = new Intent(Intent.ACTION_MAIN);
+								intent.addCategory(Intent.CATEGORY_HOME);
+								intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+								stopService(serviceIntent);
+								gps.stopUsingGPS();
+								System.exit(0);
+							}
+						});
+				dialog.create().show();
+			}
+			if (gps.canGetLocation()) {
+				double latitude = gps.getLatitude();
+				double longitude = gps.getLongitude();
+			} else {
+				gps.showSettingsAlert();
+			}
+
+		}
+	}
+
 	public void sendRouteListsData(){
 
 		if(isOnline()){
 			try{
-
-					final Dao<OrderCoordinate, Integer> orderCoordinateDaOnline = HelperFactory.getHelper().getOrderCoordinateDao();
-
-					List<RouteListDto> routeLists = new ArrayList<RouteListDto>();
-					Set<RouteListDto> routeListDtoSet = new HashSet<RouteListDto>();
-					List<RouteListElementDto> routeListElementToSend = new ArrayList<RouteListElementDto>();
-					List<RouteListElementDto> routeListElements;
-					final List<OrderCoordinate> orderCoordinates = orderCoordinateDaOnline.queryForAll();
-
-					final List<RouteListIdsToSend> routeIds = routeListIdsToSendDao.queryForAll();
-					if (!routeIds.isEmpty()) {
-						for (RouteListIdsToSend routeId : routeIds) {
-							QueryBuilder<RouteListDto, Integer> qbRouteList = routeListDao.queryBuilder();
-							qbRouteList.where().eq("Id", routeId.RouteListId);
-							RouteListDto routeListDto = qbRouteList.queryForFirst();
-							routeListDtoSet.add(routeListDto);
-							QueryBuilder<RouteListElementDto, Integer> qbRouteListElement = routeListElementDao.queryBuilder();
-							qbRouteListElement.where().eq("RouteListId", routeListDto.Id).and().eq("OutletId", routeId.OutletId);
-							routeListElements = qbRouteListElement.query();
-							if (!routeListElements.isEmpty()) {
-								routeListElementToSend.addAll(routeListElements);
-							}
+				List<RouteListDto> routeLists = new ArrayList<RouteListDto>();
+				Set<RouteListDto> routeListDtoSet = new HashSet<RouteListDto>();
+				List<RouteListElementDto> routeListElementToSend = new ArrayList<RouteListElementDto>();
+				List<RouteListElementDto> routeListElements;
+				orderCoordinates = orderCoordinateDao.queryForAll();
+				if(routeListIdsToSendList.isEmpty()) {
+					try {
+						routeListIdsToSendList = routeListIdsToSendDao.queryForAll();
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+				if (!routeListIdsToSendList.isEmpty()) {
+					for (RouteListIdsToSend routeId : routeListIdsToSendList) {
+						QueryBuilder<RouteListDto, Integer> qbRouteList = routeListDao.queryBuilder();
+						qbRouteList.where().eq("Id", routeId.RouteListId);
+						RouteListDto routeListDto = qbRouteList.queryForFirst();
+						routeListDtoSet.add(routeListDto);
+						QueryBuilder<RouteListElementDto, Integer> qbRouteListElement = routeListElementDao.queryBuilder();
+						qbRouteListElement.where().eq("RouteListId", routeListDto.Id).and().eq("OutletId", routeId.OutletId);
+						routeListElements = qbRouteListElement.query();
+						if (!routeListElements.isEmpty()) {
+							routeListElementToSend.addAll(routeListElements);
 						}
+					}
 
-						routeLists.addAll(routeListDtoSet);
+					routeLists.addAll(routeListDtoSet);
 
-						final ProgressDialog mProgressDialog = new ProgressDialog(DaysOfWeekActivity.this);
-						mProgressDialog.setIndeterminate(true);
-						mProgressDialog.setMessage("Отправка данных. Пожалуйста подождите.");
-						mProgressDialog.show();
+					mProgressDialog.setIndeterminate(true);
+					mProgressDialog.setMessage("Отправка данных. Пожалуйста подождите.");
+					mProgressDialog.show();
 
 
-						UpdateRouteListDetail updateDetail = new UpdateRouteListDetail(routeLists, routeListElementToSend, orderCoordinates);
-						API api = Adapter.RestAdapter().create(API.class);
+					UpdateRouteListDetail updateDetail = new UpdateRouteListDetail(routeLists, routeListElementToSend, orderCoordinates);
+					saveDataRequest = new SaveDataRequest("Basic " + credentials, updateDetail);
+					spiceManager.execute(saveDataRequest, "saveDataAllRequest", DurationInMillis.ONE_MINUTE, new SaveOfflineDataListener());
+
+						/*API api = Adapter.RestAdapter().create(API.class);
 						api.saveRouteListDetails("Basic " + credentials, updateDetail, new Callback<UpdateRouteListDetail>() {
 							@Override
 							public void success(UpdateRouteListDetail updateRouteListDetail, Response response) {
@@ -640,7 +808,7 @@ public class DaysOfWeekActivity extends ActionBarActivity{
 									builder.create().show();
 
 							}
-						});
+						});*/
 					}
 				//}
 
@@ -648,6 +816,50 @@ public class DaysOfWeekActivity extends ActionBarActivity{
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public final class SaveOfflineDataListener implements RequestListener<UpdateRouteListDetail> {
+
+		@Override
+		public void onRequestFailure(SpiceException spiceException) {
+
+			spiceException.printStackTrace();
+
+
+			if (mProgressDialog.isShowing())
+				mProgressDialog.dismiss();
+			AlertDialog.Builder builder = new AlertDialog.Builder(DaysOfWeekActivity.this);
+			builder.setMessage("Ошибка подключения к сети!");
+			builder.setTitle("Подключение");
+			builder.setPositiveButton("Повторить отправку", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialogInterface, int i) {
+					sendRouteListsData();
+				}
+			});
+			builder.setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialogInterface, int i) {
+
+				}
+			});
+			builder.create().show();
+		}
+
+		@Override
+		public void onRequestSuccess(UpdateRouteListDetail updateRouteListDetail) {
+			if (mProgressDialog.isShowing())
+				mProgressDialog.dismiss();
+			try {
+				routeListIdsToSendDao.delete(routeListIdsToSendList);
+				orderCoordinateDao.delete(orderCoordinates);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			Toast.makeText(DaysOfWeekActivity.this, "Данные успешно отправлены!", Toast.LENGTH_SHORT).show();
+		}
+
 	}
     
 }

@@ -2,13 +2,6 @@
 <items version="2" >
 
     <item
-        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.google.code.gson\gson\2.3.1\ecb6e1f8e4b0e84c4b886c2f14a1500caf309757\gson-2.3.1.jar"
-        jumboMode="false"
-        revision="22.0.1"
-        sha1="ecb6e1f8e4b0e84c4b886c2f14a1500caf309757">
-        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\gson-2.3.1-fdb8fc43e45df4c3376e255f67a52ad7a390b4f6.jar" />
-    </item>
-    <item
         jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.squareup.okio\okio\1.6.0\98476622f10715998eacf9240d6b479f12c66143\okio-1.6.0.jar"
         jumboMode="false"
         revision="22.0.1"
@@ -16,18 +9,18 @@
         <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\okio-1.6.0-c401358536d8966411355eeb3fbc7c731ab9ca95.jar" />
     </item>
     <item
-        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.j256.ormlite\ormlite-core\4.48\e579bd2905d0399af5029aaaf9817d5fa0ca88a5\ormlite-core-4.48.jar"
+        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.octo.android.robospice\robospice\1.4.14\fffe1563473feb2f956608554d3e97ad805914a7\robospice-1.4.14.jar"
         jumboMode="false"
         revision="22.0.1"
-        sha1="e579bd2905d0399af5029aaaf9817d5fa0ca88a5">
-        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\ormlite-core-4.48-f458ea47a0bc8967fb277e1dd5acc5828cf31cc2.jar" />
+        sha1="fffe1563473feb2f956608554d3e97ad805914a7">
+        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\robospice-1.4.14-9dcf8da196ca1e8dca426c47e22b3054aff1d69c.jar" />
     </item>
     <item
-        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.squareup.okhttp\okhttp\2.5.0\4de2b4ed3445c37ec1720a7d214712e845a24636\okhttp-2.5.0.jar"
+        jar="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\19.1.0\jars\classes.jar"
         jumboMode="false"
         revision="22.0.1"
-        sha1="4de2b4ed3445c37ec1720a7d214712e845a24636">
-        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\okhttp-2.5.0-f898499602bc089e368207abcf6eb4fd7b5faa63.jar" />
+        sha1="3499ceba05ca1f6037c6a2fad73df8f636224a28">
+        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\classes-6a88a4e075197265df7b84c4e63e2a8c31f8c332.jar" />
     </item>
     <item
         jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.squareup.retrofit\retrofit\1.9.0\a681c044244d9fc375198588297a39ba78028423\retrofit-1.9.0.jar"
@@ -44,11 +37,32 @@
         <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\support-v4-19.1.0-3f48a0c05283820f2d4934c9ac58b9bf31f5d2e4.jar" />
     </item>
     <item
-        jar="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\19.1.0\jars\classes.jar"
+        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.google.code.gson\gson\2.3.1\ecb6e1f8e4b0e84c4b886c2f14a1500caf309757\gson-2.3.1.jar"
         jumboMode="false"
         revision="22.0.1"
-        sha1="3499ceba05ca1f6037c6a2fad73df8f636224a28">
-        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\classes-6a88a4e075197265df7b84c4e63e2a8c31f8c332.jar" />
+        sha1="ecb6e1f8e4b0e84c4b886c2f14a1500caf309757">
+        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\gson-2.3.1-fdb8fc43e45df4c3376e255f67a52ad7a390b4f6.jar" />
+    </item>
+    <item
+        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.squareup.okhttp\okhttp\2.5.0\4de2b4ed3445c37ec1720a7d214712e845a24636\okhttp-2.5.0.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="4de2b4ed3445c37ec1720a7d214712e845a24636">
+        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\okhttp-2.5.0-f898499602bc089e368207abcf6eb4fd7b5faa63.jar" />
+    </item>
+    <item
+        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.octo.android.robospice\robospice-cache\1.4.14\1a13bea0b3ae105c44cb6be7fc76b6d36098faf5\robospice-cache-1.4.14.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="1a13bea0b3ae105c44cb6be7fc76b6d36098faf5">
+        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\robospice-cache-1.4.14-a101669768bfc37e9e9f22f17f19349106932acc.jar" />
+    </item>
+    <item
+        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.octo.android.robospice\robospice-retrofit\1.4.14\c5e93129d2df923119f8ee659b3723dd0d631d1d\robospice-retrofit-1.4.14.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="c5e93129d2df923119f8ee659b3723dd0d631d1d">
+        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\robospice-retrofit-1.4.14-dd2591b7b5ee18c5ef5f2355d9c0e6ca81416076.jar" />
     </item>
     <item
         jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.j256.ormlite\ormlite-android\4.48\afa06f539a4026c10b247386312aa67404b80a16\ormlite-android-4.48.jar"
@@ -56,6 +70,27 @@
         revision="22.0.1"
         sha1="afa06f539a4026c10b247386312aa67404b80a16">
         <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\ormlite-android-4.48-471969b2e3285c95321f61d4f0f8bf982275c937.jar" />
+    </item>
+    <item
+        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\org.apache.commons\commons-io\1.3.2\b6dde38349ba9bb5e6ea6320531eae969985dae5\commons-io-1.3.2.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="b6dde38349ba9bb5e6ea6320531eae969985dae5">
+        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\commons-io-1.3.2-ed35426cb2d873d06484eb14d0ac915f09e13e8b.jar" />
+    </item>
+    <item
+        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\com.j256.ormlite\ormlite-core\4.48\e579bd2905d0399af5029aaaf9817d5fa0ca88a5\ormlite-core-4.48.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="e579bd2905d0399af5029aaaf9817d5fa0ca88a5">
+        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\ormlite-core-4.48-f458ea47a0bc8967fb277e1dd5acc5828cf31cc2.jar" />
+    </item>
+    <item
+        jar="C:\Users\Nurs\.gradle\caches\modules-2\files-2.1\org.apache.commons\commons-lang3\3.3.2\90a3822c38ec8c996e84c16a3477ef632cbc87a3\commons-lang3-3.3.2.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="90a3822c38ec8c996e84c16a3477ef632cbc87a3">
+        <dex dex="C:\Users\Nurs\AndroidStudioProjects\DistributionAlkony\app\build\intermediates\pre-dexed\debug\commons-lang3-3.3.2-e5ba90fbf1a2d3cae405dd7e4ee8cfbc4a8949b1.jar" />
     </item>
 
 </items>

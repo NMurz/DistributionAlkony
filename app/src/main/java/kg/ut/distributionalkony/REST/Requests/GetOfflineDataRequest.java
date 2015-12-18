@@ -1,8 +1,9 @@
-package kg.ut.distributionalkony.REST;
+package kg.ut.distributionalkony.REST.Requests;
 
 import com.octo.android.robospice.request.retrofit.RetrofitSpiceRequest;
 
 import kg.ut.distributionalkony.Models.OfflineDataResponse;
+import kg.ut.distributionalkony.REST.API;
 import roboguice.util.temp.Ln;
 
 /**

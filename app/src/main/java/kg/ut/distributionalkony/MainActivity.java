@@ -11,6 +11,8 @@ import kg.ut.distributionalkony.Models.UserData;
 import kg.ut.distributionalkony.Models.UserLogOn;
 import kg.ut.distributionalkony.REST.API;
 import kg.ut.distributionalkony.REST.Adapter;
+import kg.ut.distributionalkony.REST.Requests.LogOnRequest;
+import kg.ut.distributionalkony.REST.RetrofitSpiceService;
 import kg.ut.distributionalkony.Repositories.LogInRepository;
 import retrofit.Callback;
 import retrofit.RestAdapter;
@@ -45,6 +47,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.octo.android.robospice.SpiceManager;
+import com.octo.android.robospice.persistence.DurationInMillis;
+import com.octo.android.robospice.persistence.exception.SpiceException;
+import com.octo.android.robospice.request.listener.RequestListener;
+
 
 public class MainActivity extends ActionBarActivity {
 	Menu menu;
@@ -58,6 +65,8 @@ public class MainActivity extends ActionBarActivity {
 	ImageView image;
 	SharedPreferences prefs;
 	boolean isAuthenticated;
+	private SpiceManager spiceManager = new SpiceManager(RetrofitSpiceService.class);
+	private LogOnRequest logOnRequest;
 
 
     @Override
@@ -96,11 +105,14 @@ public class MainActivity extends ActionBarActivity {
 		UserLogOn userLogOnData = new UserLogOn();
 		userLogOnData.Password = _password;
 		userLogOnData.UserName = _userName;
+
+		logOnRequest = new LogOnRequest(userLogOnData);
+		spiceManager.execute(logOnRequest, "logOnRequest", DurationInMillis.ONE_MINUTE, new LogOnRequestListener());
         
         //LogInRepository _logInRepository = new LogInRepository(httpClient, ApiUrlsHelper.LogOnUrl, this, this, getResources());
         //_logInRepository.LogIn(_userName, _password);
 
-		API api = Adapter.RestAdapter().create(API.class);
+		/*API api = Adapter.RestAdapter().create(API.class);
 		api.logOn(userLogOnData, new Callback<LogInResponse>() {
 			@Override
 			public void success(LogInResponse logInResponse, Response response) {
@@ -186,73 +198,8 @@ public class MainActivity extends ActionBarActivity {
 					dialog.create().show();
 				}
 			}
-		});
+		});*/
 
-    }
-
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//    	this.menu = menu;
-//        getMenuInflater().inflate(R.menu.main, menu);
-//
-//        MenuItem item_down = menu.findItem(R.id.action_exit);
-//        item_down.setVisible(false);
-//
-//        return true;
-//    }
-    
-
-    public void onLogInComplete(LogInResult logInResult){
-    	
-    	LogInResponse logInResponse = logInResult.LogInResponse;
-		Status status = logInResponse.Status;			
-		httpClient = logInResult.HttpClient;
-
-
-		
-		if (status!=null && (status.Code!=201)){
-			if (status!=null && (status.Code==402)){
-				String message = this.getString(kg.ut.distributionalkony.R.string.message_login_password_failed);		
-	    		Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-			} else {
-				String message = this.getString(kg.ut.distributionalkony.R.string.message_login_error);		
-	    		Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-			}
-		} else {
-			UserData user = logInResponse.DataList.get(0);
-			if (user!=null){
-				if (user.Roles.contains("Dealer")){
-
-
-					String message = this.getString(kg.ut.distributionalkony.R.string.message_login_success);
-					Toast.makeText(this, user.UserName + ", " + message, Toast.LENGTH_SHORT).show();
-					
-					UserStateData.getInstance().SetUserName(_userName);
-					UserStateData.getInstance().SetUserPassword(_password);
-					UserStateData.getInstance().setUserId(user.UserId);
-					UserStateData.getInstance().InitCredentials(_userName, _password);
-
-					isAuthenticated = true;
-					prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-					SharedPreferences.Editor ed = prefs.edit();
-					ed.putBoolean("isAuthenticated", isAuthenticated);
-					ed.putString("Credentials", UserStateData.getInstance().GetCredentials());
-					ed.putString("UserId", UserStateData.getInstance().getUserId());
-					ed.commit();
-
-					PublicData.getInstance().setHttpClient(httpClient);
-					PublicData.getInstance().setUserData(user);
-					
-			        Intent intent = new Intent(this, DaysOfWeekActivity.class);
-			        startActivity(intent);
-					finish();
-				} else {
-					String message = this.getString(kg.ut.distributionalkony.R.string.message_login_permissionerror);
-					Toast.makeText(this, user.UserName + ", " + message, Toast.LENGTH_SHORT).show();
-				}
-			}
-		}
     }
        
     @Override
@@ -264,5 +211,106 @@ public class MainActivity extends ActionBarActivity {
                 
         return super.onOptionsItemSelected(item);
     }
+
+	@Override
+	protected void onStart(){
+		spiceManager.start(this);
+		super.onStart();
+	}
+
+	@Override
+	protected void onStop(){
+		spiceManager.shouldStop();
+		super.onStop();
+	}
+
+	public final class LogOnRequestListener implements RequestListener<LogInResponse> {
+
+		@Override
+		public void onRequestFailure(SpiceException spiceException) {
+
+			AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
+			dialog.setTitle("Подключение");
+			dialog.setMessage("Ошибка подключения к сети! Повторить запрос?");
+			dialog.setCancelable(false);
+			dialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialogInterface, int i) {
+					logIn();
+				}
+			});
+			dialog.setNegativeButton("Выход", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialogInterface, int i) {
+					Intent intent = new Intent(Intent.ACTION_MAIN);
+					intent.addCategory(Intent.CATEGORY_HOME);
+					intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+					System.exit(0);
+				}
+			});
+			dialog.create().show();
+
+		}
+
+		@Override
+		public void onRequestSuccess(LogInResponse logInResponse) {
+
+			Status status = logInResponse.Status;
+
+			AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
+			dialog.setTitle("Вход");
+			dialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialogInterface, int i) {
+
+				}
+			});
+			if (status != null && (status.Code != 201)) {
+				if (status != null && (status.Code == 402)) {
+					//Toast.makeText(MainActivity.this, "Неверное имя пользователя или пароль! Проверте вводимые данные и попробуйте еще раз!", Toast.LENGTH_SHORT).show();
+					dialog.setMessage("Неверное имя пользователя или пароль! Проверте вводимые данные и попробуйте еще раз!");
+					dialog.create().show();
+				} else {
+					//Toast.makeText(MainActivity.this, "Ошибка входа в систему! Проверте вводимые данные и попробуйте еще раз!", Toast.LENGTH_SHORT).show();
+					dialog.setMessage("Ошибка входа в систему! Проверте вводимые данные и попробуйте еще раз!");
+					dialog.create().show();
+				}
+			} else {
+				UserData user = logInResponse.DataList.get(0);
+				if (user != null) {
+					if (user.Roles.contains("Dealer")) {
+
+
+						//String message = this.getString(kg.ut.distributionalkony.R.string.message_login_success);
+						Toast.makeText(MainActivity.this, user.UserName + ", Добро пожаловать!", Toast.LENGTH_SHORT).show();
+
+						UserStateData.getInstance().SetUserName(_userName);
+						UserStateData.getInstance().SetUserPassword(_password);
+						UserStateData.getInstance().setUserId(user.UserId);
+						UserStateData.getInstance().InitCredentials(_userName, _password);
+
+						isAuthenticated = true;
+						prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+						SharedPreferences.Editor ed = prefs.edit();
+						ed.putBoolean("isAuthenticated", isAuthenticated);
+						ed.putBoolean("offlineMode", false);
+						ed.putString("Credentials", UserStateData.getInstance().GetCredentials());
+						ed.putString("UserId", user.UserId);
+						ed.commit();
+
+						PublicData.getInstance().setHttpClient(httpClient);
+						PublicData.getInstance().setUserData(user);
+
+						Intent intent = new Intent(MainActivity.this, DaysOfWeekActivity.class);
+						startActivity(intent);
+						finish();
+					} else {
+						//String message = this.getString(kg.ut.distributionalkony.R.string.message_login_permissionerror);
+						Toast.makeText(MainActivity.this, user.UserName + ", У Вас недостаточно прав доступа!", Toast.LENGTH_SHORT).show();
+					}
+				}
+			}
+		}
+	}
     
 }

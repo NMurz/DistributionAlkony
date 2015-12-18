@@ -17,12 +17,12 @@ import retrofit.http.POST;
  */
 public interface API {
     @POST("/routes/saveroutelistdetails")
-    void saveRouteListDetails(@Header("Authorization") String token, @Body UpdateRouteListDetail updateRouteListDetail, Callback<UpdateRouteListDetail> callback);
+    UpdateRouteListDetail saveRouteListDetails(@Header("Authorization") String token, @Body UpdateRouteListDetail updateRouteListDetail);
 
     @GET("/routes/getofflinedata")
-    void getOfflineData(@Header("Authorization") String token, Callback<OfflineDataResponse> callback);
+    OfflineDataResponse getOfflineData(@Header("Authorization") String token);
 
     @POST("/account/logon")
-    void logOn(@Body UserLogOn userLogOn, Callback<LogInResponse> logInResponseCallback);
+    LogInResponse logOn(@Body UserLogOn userLogOn);
 
 }

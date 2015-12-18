@@ -37,6 +37,8 @@ import kg.ut.distributionalkony.Models.UpdateRouteListDetail;
 import kg.ut.distributionalkony.Models.UpdatedElementModel;
 import kg.ut.distributionalkony.Models.UserData;
 import kg.ut.distributionalkony.REST.Adapter;
+import kg.ut.distributionalkony.REST.Requests.SaveDataRequest;
+import kg.ut.distributionalkony.REST.RetrofitSpiceService;
 import retrofit.Callback;
 import retrofit.RestAdapter;
 import retrofit.RetrofitError;
@@ -74,6 +76,10 @@ import android.widget.Toast;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.PreparedQuery;
 import com.j256.ormlite.stmt.QueryBuilder;
+import com.octo.android.robospice.SpiceManager;
+import com.octo.android.robospice.persistence.DurationInMillis;
+import com.octo.android.robospice.persistence.exception.SpiceException;
+import com.octo.android.robospice.request.listener.RequestListener;
 
 public class OpenOutletActivity extends ActionBarActivity implements OutletDetailInterface{
 
@@ -110,11 +116,13 @@ public class OpenOutletActivity extends ActionBarActivity implements OutletDetai
 	GPSTracker gps;
 	double discount = 0;
 	int routeListId = 0;
-	Timer mTimer;
 	String dateToday;
 	String credentials;
 	String userId;
 	boolean isOffline;
+	private SpiceManager spiceManager = new SpiceManager(RetrofitSpiceService.class);
+	private SaveDataRequest saveDataRequest;
+	ProgressDialog mProgressDialog;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -123,8 +131,9 @@ public class OpenOutletActivity extends ActionBarActivity implements OutletDetai
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		isOffline = prefs.getBoolean("offlineMode", false);
-		credentials = prefs.getString("Credentials","");
-		userId = prefs.getString("UserId","");
+		credentials = prefs.getString("Credentials", "");
+		userId = prefs.getString("UserId", "");
+
 
         httpClient = PublicData.getInstance().getHttpClient();
         user = PublicData.getInstance().getUserData();
@@ -545,7 +554,7 @@ public class OpenOutletActivity extends ActionBarActivity implements OutletDetai
 					//Update total cost
 	    			TableRow totalCostTableRow =  (TableRow)tableLayout.getChildAt(tableLayout.getChildCount()-3);
 	    			TextView totalCostView = (TextView)totalCostTableRow.getChildAt(0);
-	    			totalCostView.setText(String.format("Итого со скидкой: %.1f", totalCostValue));
+	    			totalCostView.setText(String.format("Итого: %.1f", totalCostValue));
 
 					//float costWithDiscountValue = totalCostValue - ((float)discount*totalCostValue)/100;
 
@@ -586,6 +595,18 @@ public class OpenOutletActivity extends ActionBarActivity implements OutletDetai
 	public void onBackPressed() {
 		super.onBackPressed();
 		finish();
+	}
+
+	@Override
+	protected void onStart(){
+		spiceManager.start(this);
+		super.onStart();
+	}
+
+	@Override
+	protected void onStop(){
+		spiceManager.shouldStop();
+		super.onStop();
 	}
 
 	public static int dip(Context context, int pixels) {
@@ -680,7 +701,10 @@ public class OpenOutletActivity extends ActionBarActivity implements OutletDetai
 		mProgressDialog.setMessage("Отправка данных. Пожалуйста подождите.");
 		mProgressDialog.show();
 
-		API api = Adapter.RestAdapter().create(API.class);
+		saveDataRequest = new SaveDataRequest("Basic " + credentials, updateDetail);
+		spiceManager.execute(saveDataRequest, "saveDataRequest", DurationInMillis.ONE_MINUTE, new SaveDataRequestListener());
+
+		/*API api = Adapter.RestAdapter().create(API.class);
 		api.saveRouteListDetails("Basic " + credentials, updateDetail, new Callback<UpdateRouteListDetail>() {
 			@Override
 			public void success(UpdateRouteListDetail updateRouteListDetail, Response response) {
@@ -737,7 +761,7 @@ public class OpenOutletActivity extends ActionBarActivity implements OutletDetai
 					builder.create().show();
 				}
 			}
-		});
+		});*/
 
 	}
 	
@@ -916,13 +940,16 @@ public class OpenOutletActivity extends ActionBarActivity implements OutletDetai
 			UpdateRouteListDetail updateDetail = new UpdateRouteListDetail(routeListDtoList, routeListElementsToSend, orderCoordinateList);
 
 
-			final ProgressDialog mProgressDialog = new ProgressDialog(OpenOutletActivity.this);
+			mProgressDialog = new ProgressDialog(OpenOutletActivity.this);
 			mProgressDialog.setIndeterminate(true);
 			mProgressDialog.setMessage("Отправка данных. Пожалуйста подождите.");
 			mProgressDialog.setCancelable(false);
 			mProgressDialog.show();
 
-			API api = Adapter.RestAdapter().create(API.class);
+		saveDataRequest = new SaveDataRequest("Basic " + credentials, updateDetail);
+		spiceManager.execute(saveDataRequest, "saveDataRequest", DurationInMillis.ONE_MINUTE, new SaveDataRequestListener());
+
+			/*API api = Adapter.RestAdapter().create(API.class);
 			api.saveRouteListDetails("Basic " + credentials, updateDetail, new Callback<UpdateRouteListDetail>() {
 				@Override
 				public void success(UpdateRouteListDetail updateRouteListDetail, Response response) {
@@ -975,12 +1002,70 @@ public class OpenOutletActivity extends ActionBarActivity implements OutletDetai
 						});
 						builder.create().show();
 				}
-			});
+			});*/
 
 		/*}
 			}catch (SQLException e) {
 				e.printStackTrace();
 			}*/
+	}
+
+	public final class SaveDataRequestListener implements RequestListener<UpdateRouteListDetail> {
+
+		@Override
+		public void onRequestFailure(SpiceException spiceException) {
+			Log.e("Exception Message",spiceException.getMessage());
+			Log.e("Cause", spiceException.toString());
+			spiceException.printStackTrace();
+			if (mProgressDialog.isShowing()) mProgressDialog.dismiss();
+			AlertDialog.Builder builder = new AlertDialog.Builder(OpenOutletActivity.this);
+			builder.setMessage("Ошибка подключения к сети! При отмене данные будут сохранены в локальную базу");
+			builder.setTitle("Подключение");
+			builder.setCancelable(false);
+			builder.setPositiveButton("Повторить отправку", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialogInterface, int i) {
+
+					SendDataOnline();
+				}
+			});
+			builder.setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
+
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+
+					try {
+						orderCoordinateDao.create(orderCoordinate);
+						QueryBuilder<RouteListIdsToSend, Integer> qbRouteIds = routeListIdsDao.queryBuilder();
+						qbRouteIds.where().eq("RouteListId", routeListId).and().eq("OutletId", outletId);
+						RouteListIdsToSend routeId = qbRouteIds.queryForFirst();
+						if (routeId == null) {
+							RouteListIdsToSend routeIdTmp = new RouteListIdsToSend();
+							routeIdTmp.RouteListId = routeListId;
+							routeIdTmp.OutletId = outletId;
+							routeListIdsDao.create(routeIdTmp);
+						} else {
+							routeId.RouteListId = routeListId;
+							routeId.OutletId = outletId;
+							routeListIdsDao.update(routeId);
+						}
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+					Toast.makeText(OpenOutletActivity.this, "Данные сохранены в локальной базе!", Toast.LENGTH_SHORT).show();
+					finish();
+				}
+			});
+			builder.create().show();
+		}
+
+		@Override
+		public void onRequestSuccess(UpdateRouteListDetail updateRouteListDetail) {
+			if (mProgressDialog.isShowing())
+				mProgressDialog.dismiss();
+			Toast.makeText(OpenOutletActivity.this, "Данные успешно отправлены!", Toast.LENGTH_SHORT).show();
+			finish();
+		}
 	}
 
 	public boolean isOnline(){
